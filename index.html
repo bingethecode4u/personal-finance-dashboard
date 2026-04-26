@@ -355,6 +355,9 @@
       .btn-hdr-label { display: none; }
       .btn-hdr { padding: .5rem .65rem; }
 
+      /* Uniform card padding on small screens */
+      .card { padding: 1rem; }
+
       /* Full-width stacked form on very small screens */
       /* form stays 2-col even on small phones */
       .filter-fields-row { grid-template-columns: 1fr; }
@@ -431,7 +434,7 @@
       <!-- Add Transaction -->
       <div class="card">
         <div class="sec-title">Add Transaction</div>
-        <form id="txForm" novalidate>
+        <form id="txForm" novalidate style="max-width:520px;margin:0 auto">
           <div class="form-grid">
 
             <!-- Type -->
