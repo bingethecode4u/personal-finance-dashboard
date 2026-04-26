@@ -141,7 +141,7 @@
 
     /* ── Form ───────────────────────────────────────────── */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
-    .fg { display: flex; flex-direction: column; gap: .4rem; }
+    .fg { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
     .fg.full { grid-column: 1 / -1; }
 
     label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
@@ -214,7 +214,7 @@
     .filter-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; align-items: end; }
 
     /* Custom select wrapper */
-    .sel-wrap { position: relative; }
+    .sel-wrap { position: relative; width: 100%; display: block; }
     .sel-wrap select {
       appearance: none; -webkit-appearance: none;
       padding-right: 2.2rem; cursor: pointer;
