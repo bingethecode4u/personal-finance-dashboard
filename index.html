@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
   <title>Personal Finance Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
@@ -29,6 +30,8 @@
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
+    html { color-scheme: light; }
+
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
@@ -44,24 +47,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: .75rem;
       box-shadow: var(--shadow-md);
       position: sticky;
       top: 0;
       z-index: 100;
     }
-    header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -.025em; }
-    header .hdate { font-size: .8rem; opacity: .65; }
-    .header-right { display: flex; align-items: center; gap: .75rem; }
+    .header-left { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+    header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -.025em; white-space: nowrap; }
+    header .hdate { font-size: .8rem; opacity: .65; white-space: nowrap; }
+    .header-right { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
     .btn-hdr {
       display: flex; align-items: center; gap: .4rem;
       padding: .42rem .9rem; border-radius: 99px;
       border: 1.5px solid rgba(255,255,255,.28); background: rgba(255,255,255,.08);
       color: #fff; font-size: .78rem; font-weight: 700; cursor: pointer;
       transition: background .17s, border-color .17s; font-family: inherit;
-      white-space: nowrap;
+      white-space: nowrap; min-height: 36px;
     }
     .btn-hdr:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.55); }
     .btn-hdr svg { flex-shrink: 0; }
+    .btn-hdr-label { /* text hidden on small screens via media query */ }
     /* Import success/error toast */
     #importToast {
       position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -316,13 +322,48 @@
     @media (max-width: 1100px) {
       .dash-grid { grid-template-columns: 1fr; }
     }
+
     @media (max-width: 768px) {
       .container { padding: 1rem; }
-      header { padding: .85rem 1rem; }
-      header h1 { font-size: 1.15rem; }
-      .summary-cards { grid-template-columns: 1fr; }
-      .form-grid, .filter-grid { grid-template-columns: 1fr; }
+
+      /* Header: stack into two rows on tablet */
+      header { flex-wrap: wrap; padding: .85rem 1rem; gap: .6rem; }
+      .header-left { flex-direction: row; align-items: center; gap: .75rem; width: 100%; }
+      header h1 { font-size: 1.1rem; }
+      .header-right { width: 100%; justify-content: flex-end; gap: .5rem; }
+
+      /* Summary: balance full-width, income+expense side-by-side */
+      .summary-cards { grid-template-columns: repeat(2, 1fr); }
+      .summary-card.balance { grid-column: 1 / -1; }
+      .s-amount { font-size: 1.45rem; }
+
+      .form-grid { grid-template-columns: 1fr 1fr; }
       .chart-wrap { height: 240px; }
+
+      /* Larger tap targets */
+      input, select { min-height: 44px; }
+      .type-btn { min-height: 44px; }
+    }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1rem; }
+      .hdate { display: none; }
+
+      /* Icon-only export/import buttons on small phones */
+      .btn-hdr-label { display: none; }
+      .btn-hdr { padding: .5rem .65rem; }
+
+      /* Full-width stacked form on very small screens */
+      .form-grid { grid-template-columns: 1fr; }
+      .filter-fields-row { grid-template-columns: 1fr; }
+
+      /* Summary cards: stacked on very small */
+      .summary-cards { grid-template-columns: 1fr; }
+      .summary-card.balance { grid-column: auto; }
+      .s-amount { font-size: 1.75rem; }
+
+      /* Transaction list unlimited height on mobile (natural scroll) */
+      .tx-list { max-height: none; }
     }
   </style>
 </head>
@@ -331,16 +372,18 @@
 
 <!-- ═══════════════════════════════════════════ HEADER -->
 <header>
-  <h1>💰 Personal Finance Dashboard</h1>
-  <div class="header-right">
+  <div class="header-left">
+    <h1>💰 Personal Finance Dashboard</h1>
     <span class="hdate" id="hdate"></span>
+  </div>
+  <div class="header-right">
     <button class="btn-hdr" id="btnExport" type="button">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Export JSON
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span class="btn-hdr-label">Export JSON</span>
     </button>
     <button class="btn-hdr" id="btnImport" type="button">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/></svg>
-      Import JSON
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/></svg>
+      <span class="btn-hdr-label">Import JSON</span>
     </button>
     <input type="file" id="importFileInput" accept=".json,application/json" style="display:none">
   </div>
