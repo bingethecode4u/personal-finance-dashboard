@@ -84,6 +84,43 @@
     /* ── Layout ────────────────────────────────────────── */
     .container { max-width: 1440px; margin: 0 auto; padding: 1.5rem 2rem; }
 
+    /* ── Period Selector ─────────────────────────────────── */
+    .period-bar {
+      display: flex; align-items: center; gap: .75rem;
+      margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .period-bar-label {
+      font-size: .72rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
+    }
+    .period-pills { display: flex; gap: .375rem; flex-wrap: wrap; }
+    .ppill {
+      padding: .35rem 1rem; border-radius: 99px;
+      border: 1.5px solid var(--border); background: var(--card);
+      font-size: .8rem; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all .17s; font-family: inherit; white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+    .ppill:hover  { border-color: var(--primary); color: var(--primary); }
+    .ppill.active { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(108,99,255,.3); }
+    .period-pick-wrap { display: none; align-items: center; gap: .5rem; }
+    .period-pick-wrap.visible { display: flex; }
+    .period-pick-wrap input[type=month] {
+      padding: .35rem .75rem; border: 1.5px solid var(--border);
+      border-radius: 99px; font-size: .8rem; font-weight: 600;
+      color: var(--text); background: var(--card); font-family: inherit;
+      box-shadow: var(--shadow); min-height: unset; width: auto;
+    }
+    .period-pick-wrap input[type=month]:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.12);
+    }
+    .period-heading {
+      margin-left: auto; font-size: .8rem; font-weight: 700;
+      color: var(--primary); background: var(--primary-light);
+      padding: .3rem .85rem; border-radius: 99px; white-space: nowrap;
+    }
+
     /* ── Summary Cards ─────────────────────────────────── */
     .summary-cards {
       display: grid;
@@ -397,6 +434,20 @@
 
 <div class="container">
 
+  <!-- ══════════════════════════════════════ PERIOD SELECTOR -->
+  <div class="period-bar">
+    <span class="period-bar-label">View:</span>
+    <div class="period-pills">
+      <button class="ppill" data-period="month" type="button">This Month</button>
+      <button class="ppill" data-period="pick"  type="button">Pick Month</button>
+      <button class="ppill active" data-period="all" type="button">All Time</button>
+    </div>
+    <div class="period-pick-wrap" id="periodPickWrap">
+      <input type="month" id="periodMonthPick">
+    </div>
+    <span class="period-heading" id="periodHeading">All Time</span>
+  </div>
+
   <!-- ══════════════════════════════════════ SUMMARY CARDS -->
   <div class="summary-cards">
     <div class="card summary-card balance">
@@ -580,6 +631,20 @@ let barChart     = null;
 let donutChart   = null;
 let activeType   = 'income';  // form type toggle
 let activeFType  = 'all';     // filter type pill
+let activePeriod = 'all';     // summary period: 'month' | 'pick' | 'all'
+let pickedMonth  = '';        // YYYY-MM when activePeriod === 'pick'
+
+const thisMonthKey = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+};
+
+function periodTx() {
+  if (activePeriod === 'all') return transactions;
+  const key = activePeriod === 'month' ? thisMonthKey() : pickedMonth;
+  if (!key) return transactions;
+  return transactions.filter(t => t.date.startsWith(key));
+}
 
 /* ==========================================================
    STORAGE
@@ -625,15 +690,26 @@ function fillCatSelect(el, type, withAll = false) {
    SUMMARY
 ========================================================== */
 function updateSummary() {
-  const income  = transactions.filter(t => t.type === 'income') .reduce((s,t) => s + t.amount, 0);
-  const expense = transactions.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+  const scoped  = periodTx();
+  const income  = scoped.filter(t => t.type === 'income') .reduce((s,t) => s + t.amount, 0);
+  const expense = scoped.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
 
   document.getElementById('sBalance')     .textContent = fmt(income - expense);
   document.getElementById('sIncome')      .textContent = fmt(income);
   document.getElementById('sExpense')     .textContent = fmt(expense);
-  document.getElementById('sTxCount')     .textContent = plural(transactions.length, 'transaction');
-  document.getElementById('sIncomeCount') .textContent = plural(transactions.filter(t=>t.type==='income').length,  'transaction');
-  document.getElementById('sExpenseCount').textContent = plural(transactions.filter(t=>t.type==='expense').length, 'transaction');
+  document.getElementById('sTxCount')     .textContent = plural(scoped.length, 'transaction');
+  document.getElementById('sIncomeCount') .textContent = plural(scoped.filter(t=>t.type==='income').length,  'transaction');
+  document.getElementById('sExpenseCount').textContent = plural(scoped.filter(t=>t.type==='expense').length, 'transaction');
+
+  let label;
+  if (activePeriod === 'all') { label = 'All Time'; }
+  else if (activePeriod === 'month') {
+    label = new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  } else {
+    const [y, m] = (pickedMonth || thisMonthKey()).split('-');
+    label = new Date(+y, +m-1, 1).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  }
+  document.getElementById('periodHeading').textContent = label;
 }
 
 /* ==========================================================
@@ -800,7 +876,7 @@ function renderBarChart() {
 
 function renderDonutChart() {
   const bycat = {};
-  transactions.filter(t => t.type === 'expense').forEach(t => {
+  periodTx().filter(t => t.type === 'expense').forEach(t => {
     bycat[t.category] = (bycat[t.category] ?? 0) + t.amount;
   });
 
@@ -934,6 +1010,31 @@ txForm.addEventListener('submit', e => {
   document.getElementById('txAmount').value = '';
   txCatSel.value = '';
   document.getElementById('txNote').value = '';
+});
+
+/* ==========================================================
+   PERIOD SELECTOR LISTENERS
+========================================================== */
+document.querySelectorAll('.ppill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    activePeriod = pill.dataset.period;
+    document.querySelectorAll('.ppill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const pickWrap = document.getElementById('periodPickWrap');
+    pickWrap.classList.toggle('visible', activePeriod === 'pick');
+    if (activePeriod === 'pick' && !pickedMonth) {
+      pickedMonth = thisMonthKey();
+      document.getElementById('periodMonthPick').value = pickedMonth;
+    }
+    updateSummary();
+    renderDonutChart();
+  });
+});
+
+document.getElementById('periodMonthPick').addEventListener('change', e => {
+  pickedMonth = e.target.value;
+  updateSummary();
+  renderDonutChart();
 });
 
 /* ==========================================================
