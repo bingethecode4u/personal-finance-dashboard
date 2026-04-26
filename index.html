@@ -140,28 +140,30 @@
     }
 
     /* ── Form ───────────────────────────────────────────── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-    .fg { display: flex; flex-direction: column; gap: .35rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+    .fg { display: flex; flex-direction: column; gap: .4rem; }
     .fg.full { grid-column: 1 / -1; }
 
-    label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 
     input, select, textarea {
-      padding: .5rem .75rem;
+      padding: .6rem .85rem;
       border: 1.5px solid var(--border);
       border-radius: var(--rs);
-      font-size: .875rem;
+      font-size: .9rem;
       color: var(--text);
-      background: #fff;
-      transition: border-color .18s, box-shadow .18s;
+      background: var(--bg);
+      transition: border-color .18s, box-shadow .18s, background .18s;
       font-family: inherit;
       width: 100%;
     }
     input:focus, select:focus, textarea:focus {
       outline: none;
+      background: #fff;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(108,99,255,.12);
     }
+    input::placeholder { color: #b0bac8; }
 
     /* ── Type toggle ────────────────────────────────────── */
     .type-toggle { display: flex; gap: .5rem; }
@@ -354,7 +356,7 @@
       .btn-hdr { padding: .5rem .65rem; }
 
       /* Full-width stacked form on very small screens */
-      .form-grid { grid-template-columns: 1fr; }
+      /* form stays 2-col even on small phones */
       .filter-fields-row { grid-template-columns: 1fr; }
 
       /* Summary cards: stacked on very small */
@@ -445,13 +447,15 @@
             <!-- Amount -->
             <div class="fg">
               <label for="txAmount">Amount ($)</label>
-              <input type="number" id="txAmount" placeholder="0.00" min="0.01" step="0.01">
+              <input type="number" id="txAmount" placeholder="e.g. 150.00" min="0.01" step="0.01">
             </div>
 
             <!-- Category -->
             <div class="fg">
               <label for="txCat">Category</label>
-              <select id="txCat"></select>
+              <div class="sel-wrap">
+                <select id="txCat"></select>
+              </div>
             </div>
 
             <!-- Date -->
